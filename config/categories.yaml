@@ -1,0 +1,50 @@
+# ルールベースの振り分けを優先し、その後Gemini 2.5 Flashで分類
+eisenhower_labels:
+  q1: "01_最優先(緊急・重要)"
+  q2: "02_重要(非緊急・重要)"
+  q3: "03_作業(緊急・非重要)"
+  q4: "04_保管(非緊急・非重要)"
+  processed: "Auto/分析済み"
+
+rules:
+  billing:
+    keywords: ["invoice", "receipt", "請求", "領収書", "決済", "支払い"]
+    from_domains: ["stripe.com", "payments.google.com", "paypal.com"]
+    eisenhower: "q1"
+    auto_archive: false
+
+  client:
+    keywords: ["契約", "納品", "要件", "見積", "発注", "打ち合わせ", "MTG"]
+    from_domains: []
+    eisenhower: "q1"
+    auto_archive: false
+
+  system:
+    keywords: ["alert", "failed build", "error", "cronjob", "障害", "異常"]
+    from_domains:
+      [
+        "github.com",
+        "githubstatus.com",
+        "aws.amazon.com",
+        "console.cloud.google.com",
+      ]
+    eisenhower: "q3"
+    auto_archive: false
+
+  newsletters:
+    keywords:
+      [
+        "unsubscribe",
+        "newsletter",
+        "メルマガ",
+        "配信停止",
+        "キャンペーン",
+        "お得な",
+      ]
+    from_domains: []
+    eisenhower: "q4"
+    auto_archive: true
+
+defaults:
+  gmail_query: 'label:inbox -label:"Auto/分析済み" newer_than:7d'
+  auto_archive_labels: ["newsletters"]
