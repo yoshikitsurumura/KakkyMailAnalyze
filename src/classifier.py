@@ -4,7 +4,17 @@ import os, re, yaml
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GEMINI_MODEL   = os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
 USE_LLM        = os.environ.get("USE_LLM", "true").lower() in ("1","true","yes")
-MAX_LLM_CALLS  = int(os.environ.get("MAX_LLM_CALLS", "50"))
+
+def _get_int_env(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+MAX_LLM_CALLS  = _get_int_env("MAX_LLM_CALLS", 50)
 _llm_calls     = 0
 
 SYSTEM_PROMPT = (
