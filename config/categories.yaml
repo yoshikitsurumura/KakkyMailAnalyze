@@ -1,37 +1,82 @@
 # ルールベースの振り分けを優先し、その後Gemini 2.5 Flashで分類
+# 分類基準: 行動ベース（要返信 / 要対応 / 参考情報 / 不要）
+
 eisenhower_labels:
-  q1: "01_最優先(緊急・重要)"
-  q2: "02_重要(非緊急・重要)"
-  q3: "03_作業(緊急・非重要)"
-  q4: "04_保管(非緊急・非重要)"
+  q1: "01_要返信"
+  q2: "02_要対応"
+  q3: "03_参考情報"
+  q4: "04_不要"
   processed: "Auto/分析済み"
 
 rules:
-  billing:
-    keywords: ["invoice", "receipt", "請求", "領収書", "決済", "支払い"]
-    from_domains: ["stripe.com", "payments.google.com", "paypal.com"]
-    eisenhower: "q1"
-    auto_archive: false
-
-  client:
-    keywords: ["契約", "納品", "要件", "見積", "発注", "打ち合わせ", "MTG"]
+  # Q1: 返信が必要なクライアント・取引先からの連絡
+  client_reply:
+    keywords:
+      [
+        "ご確認ください",
+        "ご連絡ください",
+        "お返事",
+        "ご回答",
+        "ご検討",
+        "打ち合わせ",
+        "MTG",
+        "ミーティング",
+        "商談",
+        "ご相談",
+        "見積",
+        "発注",
+        "契約",
+      ]
     from_domains: []
     eisenhower: "q1"
     auto_archive: false
 
-  system:
-    keywords: ["alert", "failed build", "error", "cronjob", "障害", "異常"]
-    from_domains:
+  # Q2: 期限がありアクションが必要なもの（請求・タスク）
+  action_required:
+    keywords:
       [
-        "github.com",
-        "githubstatus.com",
-        "aws.amazon.com",
-        "console.cloud.google.com",
+        "invoice",
+        "receipt",
+        "請求",
+        "領収書",
+        "決済",
+        "支払い",
+        "締め切り",
+        "期限",
+        "〆切",
+        "納品",
+        "提出",
+        "申込",
+        "更新",
       ]
+    from_domains: ["stripe.com", "payments.google.com", "paypal.com"]
+    eisenhower: "q2"
+    auto_archive: false
+
+  # Q3: 後で使いそうな参考情報（予約確認、お知らせ等）
+  reference:
+    keywords:
+      [
+        "予約確認",
+        "ご予約",
+        "航空券",
+        "搭乗",
+        "チケット",
+        "確認番号",
+        "お知らせ",
+        "ご案内",
+        "完了しました",
+        "発送しました",
+        "配送",
+        "追跡",
+      ]
+    from_domains:
+      ["booking.com", "expedia.com", "ana.co.jp", "jal.co.jp", "amazon.co.jp"]
     eisenhower: "q3"
     auto_archive: false
 
-  newsletters:
+  # Q4: 不要なもの（広告、スカウト、メルマガ）
+  spam_ads:
     keywords:
       [
         "unsubscribe",
@@ -40,11 +85,28 @@ rules:
         "配信停止",
         "キャンペーン",
         "お得な",
+        "セール",
+        "割引",
+        "クーポン",
+        "スカウト",
+        "求人",
+        "転職",
+        "オファー",
+        "採用",
+        "PR",
+        "広告",
       ]
-    from_domains: []
+    from_domains:
+      [
+        "linkedin.com",
+        "green-japan.com",
+        "wantedly.com",
+        "bizreach.co.jp",
+        "doda.jp",
+      ]
     eisenhower: "q4"
     auto_archive: true
 
 defaults:
   gmail_query: 'label:inbox -label:"Auto/分析済み" newer_than:7d'
-  auto_archive_labels: ["newsletters"]
+  auto_archive_labels: ["spam_ads"]
